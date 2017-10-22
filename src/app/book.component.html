@@ -1,0 +1,142 @@
+<html>
+<head>
+  <style>
+    .my_button {
+      width: 100px;
+      height: inherit;
+    }
+  </style>
+</head>
+</html>
+
+<h1 align="center">Книжная полка </h1>
+
+<table>
+  <tr>
+    <td width="70%">
+
+
+      <table align="center" *ngIf="ifPagingHidden">
+        <tr >
+          <th>
+            <h3 align="center">
+              Список книг
+            </h3 >
+          </th>
+          <th *ngFor="let line of buttonMass; let i = index"><button type="button" (click)="pagingNumUpdate(line)"> {{i+1}}</button></th>
+        </tr>
+      </table>
+
+      <table width="100%" align="center" border="1px">
+        <tr><th width="2%">№ п/п</th><th width="10%">Title</th><th width="50%">Description</th><th>Author</th><th width="8%">ISBN</th><th width="5%">PrintYear</th><th width="10%" colspan="3">Действия</th></tr>
+        <tr>
+          <th rowspan="2">Фильтр
+          </th>
+          <th><p align="center"><input type="text" id="findBookTitle" class="my_button"></p></th>
+          <th><p align="center"><input type="text" id="findBookDiscription" width="70%"></p></th>
+          <th><p align="center"><input type="text" id="findBookAuthor" class="my_button"></p></th>
+          <th><p align="center"><input type="text" id="findBookISBN" class="my_button"></p></th>
+          <th><table frame="void">
+            <th>
+              <p><select id="findBookPrintYear" >
+                <option value="0">Равно</option>
+                <option value="1">Больше</option>
+                <option value="2">Меньше</option></select>
+              </p>
+            </th>
+            <th>
+              <p><input type="text" class="my_button" id="findBookPrintYearText">
+            </th>
+          </table>
+          </th>
+          <th colspan="3">
+            <p><select name = "reedBooks" id="findBookReedAlready" >
+              <option value="2">Все книги</option>
+              <option value="1">Все прочитанные книги</option>
+              <option value="0">Все непрочитанные книги</option></select>
+            </p>
+          </th></tr>
+        <tr >
+
+          <td colspan="8">
+            <table width="100%">
+              <tr>
+                <td align="right">
+                  <p><input type="submit" value="Подобрать" class="my_button" (click)="selectParams()"></p>
+
+                </td>
+                <td align="right" width="10%">
+                  <p><input type="submit" value="Очистить" class="my_button" (click)="reload()"></p>
+                </td>
+              </tr>
+            </table>
+          </td>
+
+
+        </tr>
+        <tr *ngFor="let book of innerBooks; let i = index">
+          <td align="center">{{i+1 + pagingNum}}</td><td align="center">{{book.title}}</td> <td align="center">{{book.description}}</td><td align="center">{{book.author}}</td><td align="center">{{book.isbn}}</td><td align="center">{{book.printYear}}</td>
+          <td><button type="button" (click)="loadBookToEdit(book.bookId)">Обновить издание</button> </td>
+          <td><button type="button" (click)="deleteBook(book.bookId)">Убрать книгу</button></td>
+          <td *ngIf="book.readAlready == 0"><button  type="button" (click)="reedBook(book.bookId)">Прочитать книгу</button></td>
+          <td *ngIf="book.readAlready != 0" align="center"><h5>Книга прочитана</h5></td>
+        </tr>
+      </table>
+
+    </td>
+    <td >
+      <h3 *ngIf="bookIdToUpdate; else create"  align="center">
+        Для обновления издания: "{{bookTitle}}" {{bookAuthor}} заполните следующие поля:
+      </h3>
+      <ng-template #create>
+        <h3  align="center"> Добавить новую книгу </h3>
+      </ng-template>
+      <div>
+        <form [formGroup]="bookForm" (ngSubmit)="onBookFormSubmit()">
+
+          <table align="center" border="1px" cellpadding="10" width=" 20%">
+            <tr ><td>Заголовок </td><td><input maxlength="100" formControlName="title">
+              <label *ngIf="bookForm.get('title').invalid && processValidation" [ngClass] = "'error'"> Заголовок не определен. </label>
+            </td></tr>
+            <tr><td>Описание</td><td><input maxlength="255" formControlName="description">
+              <label *ngIf="bookForm.get('description').invalid && processValidation" [ngClass] = "'error'"> Описание не определено. </label>
+            </td></tr>
+            <tr *ngIf="!bookIdToUpdate"><td>Автор </td><td><input maxlength="100"  formControlName="author">
+              <label *ngIf="bookForm.get('author').invalid && processValidation" [ngClass] = "'error'"> Автор не определен. </label>
+            </td></tr>
+            <tr><td>ISBN</td><td><input maxlength="20" type="number" formControlName="isbn">
+              <label *ngIf="bookForm.get('isbn').invalid && processValidation " [ngClass] = "'error'"> ISBN не определен. </label>
+            </td></tr>
+            <tr><td >Год выпуска  </td><td><input type="number" formControlName="printYear">
+              <label *ngIf="bookForm.get('printYear').invalid && processValidation" [ngClass] = "'error'"> Год выпуска не определен. </label>
+            </td></tr>
+            <tr><td colspan="2" align="center">
+              <button *ngIf="!bookIdToUpdate" align="center">Создать</button>
+              <button *ngIf="bookIdToUpdate" align="center">Обновить</button>
+              <button (click)="backToCreateBook()" *ngIf="bookIdToUpdate">Назад</button>
+            </td></tr>
+          </table>
+        </form>
+        <br/>
+        <div *ngIf="statusCode; else processing" align="center">
+          <div *ngIf="statusCode === 201" [ngClass] = "'success'">
+            Книга добавлена.
+          </div>
+          <div *ngIf="statusCode === 409" [ngClass] = "'success'">
+            Книга уже существует.
+          </div>
+          <div *ngIf="statusCode === 200" [ngClass] = "'success'">
+            Книга обновлена.
+          </div>
+          <div *ngIf="statusCode === 204" [ngClass] = "'success'">
+            Книга удалена.
+          </div>
+          <div *ngIf="statusCode === 500" [ngClass] = "'error'">
+            Internal Server Error.
+          </div>
+        </div>
+      </div>
+    </td>
+  </tr>
+</table>
+
